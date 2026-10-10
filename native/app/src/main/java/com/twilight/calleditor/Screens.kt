@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -29,14 +30,9 @@ fun dateLabel(date: Long, pattern: String = "MM月dd日 HH:mm") = Instant.ofEpoc
 @Composable
 fun CallsScreen(entries: List<CallEntry>, permission: Boolean, busy: Boolean, compact: Boolean, onPermission: () -> Unit, onSettings: () -> Unit, onRefresh: () -> Unit, onEdit: (CallEntry) -> Unit, onAdd: () -> Unit, onBatchAdd: (List<CallEntry>) -> Unit, vendorSupported: Boolean = false) {
     var query by rememberSaveable { mutableStateOf("") }
-    var batchAddOpen by rememberSaveable { mutableStateOf(false) }
-    if (batchAddOpen) {
-        BatchAddScreen(busy = busy, onBack = { batchAddOpen = false }, onSubmit = { items -> batchAddOpen = false; onBatchAdd(items) })
-        return
-    }
     var filter by rememberSaveable { mutableIntStateOf(0) }
     val shown = remember(entries, query, filter, vendorSupported) { entries.filter { it.matchesCallFilter(filter, vendorSupported) && (it.number.contains(query, true) || it.name.contains(query, true)) } }
-    Scaffold(contentWindowInsets = WindowInsets(0, 0, 0, 0), topBar = { MediumTopAppBar(windowInsets = WindowInsets(0, 0, 0, 0), title = { Text("通话记录", fontWeight = FontWeight.Bold) }, actions = { TextButton(enabled = !busy && permission, onClick = { batchAddOpen = true }) { Text("批量新增") }; IconButton(enabled = !busy && permission, onClick = onRefresh) { AppSymbol(AppIcon.Refresh, "刷新") } }) },
+    Scaffold(contentWindowInsets = WindowInsets(0, 0, 0, 0), topBar = { MediumTopAppBar(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).clip(RoundedCornerShape(28.dp)), windowInsets = WindowInsets(0, 0, 0, 0), colors = TopAppBarDefaults.mediumTopAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer), title = { Text("通话记录", fontWeight = FontWeight.Bold) }, actions = { IconButton(enabled = !busy && permission, onClick = onRefresh) { AppSymbol(AppIcon.Refresh, "刷新") } }) },
         floatingActionButton = { if (permission) ExtendedFloatingActionButton(modifier = Modifier.semantics { contentDescription = "新增记录" }, onClick = { if (!busy) onAdd() }, icon = { AppSymbol(AppIcon.Add) }, text = { Text("新增记录") }) }) { padding ->
         if (!permission) {
             PermissionPanel(Modifier.padding(padding), busy, onPermission, onSettings)
