@@ -7,6 +7,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import java.time.LocalDateTime
@@ -16,20 +17,41 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>) -> Unit) {
-    var numbers by rememberSaveable { mutableStateOf("") }
-    var names by rememberSaveable { mutableStateOf("") }
-    var types by rememberSaveable { mutableStateOf("") }
-    var durations by rememberSaveable { mutableStateOf("") }
-    var callTimes by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
+    val templatePrefs = remember { context.getSharedPreferences("batch_add_template", android.content.Context.MODE_PRIVATE) }
     val defaultEnd = remember { LocalDateTime.now().withSecond(0).withNano(0) }
-    var rangeStart by rememberSaveable { mutableStateOf(defaultEnd.minusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))) }
-    var rangeEnd by rememberSaveable { mutableStateOf(defaultEnd.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))) }
-    var intervalMinSeconds by rememberSaveable { mutableStateOf("60") }
-    var intervalMaxSeconds by rememberSaveable { mutableStateOf("90") }
-    var timeJitterSeconds by rememberSaveable { mutableStateOf("30") }
+    val defaultStartText = remember { defaultEnd.minusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) }
+    val defaultEndText = remember { defaultEnd.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) }
+    var numbers by rememberSaveable { mutableStateOf(templatePrefs.getString("numbers", "").orEmpty()) }
+    var names by rememberSaveable { mutableStateOf(templatePrefs.getString("names", "").orEmpty()) }
+    var types by rememberSaveable { mutableStateOf(templatePrefs.getString("types", "").orEmpty()) }
+    var durations by rememberSaveable { mutableStateOf(templatePrefs.getString("durations", "").orEmpty()) }
+    var callTimes by rememberSaveable { mutableStateOf(templatePrefs.getString("callTimes", "").orEmpty()) }
+    var rangeStart by rememberSaveable { mutableStateOf(templatePrefs.getString("rangeStart", defaultStartText).orEmpty()) }
+    var rangeEnd by rememberSaveable { mutableStateOf(templatePrefs.getString("rangeEnd", defaultEndText).orEmpty()) }
+    var intervalMinSeconds by rememberSaveable { mutableStateOf(templatePrefs.getString("intervalMinSeconds", "60").orEmpty()) }
+    var intervalMaxSeconds by rememberSaveable { mutableStateOf(templatePrefs.getString("intervalMaxSeconds", "90").orEmpty()) }
+    var timeJitterSeconds by rememberSaveable { mutableStateOf(templatePrefs.getString("timeJitterSeconds", "30").orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
     var preview by remember { mutableStateOf<List<CallEntry>?>(null) }
-    BackHandler { if (!busy) { if (preview != null) preview = null else onBack() } }
+    var showKeepTemplateDialog by remember { mutableStateOf(false) }
+    fun requestExit() { if (!busy) { if (preview != null) preview = null else showKeepTemplateDialog = true } }
+    fun saveTemplate() {
+        templatePrefs.edit()
+            .putString("numbers", numbers).putString("names", names)
+            .putString("types", types).putString("durations", durations)
+            .putString("callTimes", callTimes).putString("rangeStart", rangeStart)
+            .putString("rangeEnd", rangeEnd).putString("intervalMinSeconds", intervalMinSeconds)
+            .putString("intervalMaxSeconds", intervalMaxSeconds).putString("timeJitterSeconds", timeJitterSeconds)
+            .putBoolean("keepTemplate", true).apply()
+    }
+    fun clearTemplate() {
+        templatePrefs.edit().clear().apply()
+        numbers = ""; names = ""; types = ""; durations = ""; callTimes = ""
+        rangeStart = defaultStartText; rangeEnd = defaultEndText
+        intervalMinSeconds = "60"; intervalMaxSeconds = "90"; timeJitterSeconds = "30"
+    }
+    BackHandler { requestExit() }
 
     fun parse(): List<CallEntry> {
         fun rows(value: String) = value.lines().map { it.trim() }
@@ -105,12 +127,22 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
         }
     }
 
+    if (showKeepTemplateDialog) {
+        AlertDialog(
+            onDismissRequest = { showKeepTemplateDialog = false },
+            title = { Text("保留批量新增模板？") },
+            text = { Text("是否保留本次填写的号码列表和所有批量新增设置，供下次打开时使用？") },
+            confirmButton = { TextButton(onClick = { saveTemplate(); showKeepTemplateDialog = false; onBack() }) { Text("是，保留") } },
+            dismissButton = { TextButton(onClick = { clearTemplate(); showKeepTemplateDialog = false; onBack() }) { Text("否，清空") } }
+        )
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = { MediumTopAppBar(
             windowInsets = WindowInsets(0, 0, 0, 0),
             title = { Text(if (preview == null) "批量新增" else "预览批量新增") },
-            navigationIcon = { TextButton(enabled = !busy, onClick = { if (preview != null) preview = null else onBack() }) { Text("返回") } }
+            navigationIcon = { TextButton(enabled = !busy, onClick = { requestExit() }) { Text("返回") } }
         ) }
     ) { padding ->
         Column(
