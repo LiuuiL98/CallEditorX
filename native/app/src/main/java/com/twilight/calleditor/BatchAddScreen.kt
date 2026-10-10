@@ -9,6 +9,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -163,6 +165,8 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = { MediumTopAppBar(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).clip(RoundedCornerShape(28.dp)),
+            colors = TopAppBarDefaults.mediumTopAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
             windowInsets = WindowInsets(0, 0, 0, 0),
             title = { Text(if (preview == null) "批量新增" else "预览批量新增") },
             navigationIcon = { TextButton(enabled = !busy, onClick = { requestExit() }) { Text("返回") } }
