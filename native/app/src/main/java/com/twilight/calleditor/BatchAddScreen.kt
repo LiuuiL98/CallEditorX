@@ -104,7 +104,6 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
         require(randomDurationMin != null && randomDurationMin in 0..31_536_000L) { "随机通话时长最小值请输入 0 至 31536000 秒" }
         require(randomDurationMax != null && randomDurationMax in randomDurationMin..31_536_000L) { "随机通话时长最大值不能小于最小值，且不能超过 31536000 秒" }
         var previousDate: Long? = null
-        var previousDuration = 0L
         return rowOrder.mapIndexed { outputIndex, sourceIndex ->
             val number = numberRows[sourceIndex]
             val originalRow = numberIndices[sourceIndex]
@@ -119,13 +118,15 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
                 val timeText = timeRows.getOrNull(originalRow).orEmpty()
                 require(duration >= 0L) { "通话时长不能小于 0 秒" }
                 val date = if (timeText.isBlank()) {
-                    val baseline = previousDate?.minus(
-                        (kotlin.random.Random.nextLong(intervalMin!!, intervalMax!! + 1L) + previousDuration) * 1000L
-                    ) ?: endMillis
+                    // date is the call start time. When generating older entries in descending
+                    // order, reserve the CURRENT call's duration before the newer entry, not the
+                    // previous (newer) call's duration.
+                    val intervalSeconds = kotlin.random.Random.nextLong(intervalMin!!, intervalMax!! + 1L)
+                    val baseline = previousDate?.minus((duration + intervalSeconds) * 1000L) ?: endMillis
                     val jitterMillis = if (jitter!! == 0L) 0L else kotlin.random.Random.nextLong(jitter + 1L) * 1000L
                     val candidate = baseline - jitterMillis
                     val adjusted = previousDate?.let { prev ->
-                        minOf(candidate, prev - previousDuration * 1000L)
+                        minOf(candidate, prev - duration * 1000L)
                     } ?: candidate
                     require(adjusted in startMillis..endMillis) {
                         "随机生成的通话时间超出所选范围；请扩大时间范围或减小随机间隔/偏移"
@@ -139,15 +140,14 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
                     }
                 }
                 previousDate?.let { prev ->
-                    require(prev - date >= previousDuration * 1000L) {
-                        "第 ${outputIndex + 1} 条记录与上一条的时间差不能小于上一条通话时长（${previousDuration} 秒）"
+                    require(prev - date >= duration * 1000L) {
+                        "第 ${outputIndex + 1} 条记录与上一条的时间差不能小于本条通话时长（${duration} 秒）"
                     }
                 }
                 val entry = CallEntry(number = number, name = name, type = type, duration = duration, date = date)
                 require(entry.validate() == null) { entry.validate().orEmpty() }
                 require(number.isNotBlank()) { "电话号码不能为空" }
                 previousDate = date
-                previousDuration = duration
                 entry
             } catch (e: Exception) {
                 throw IllegalArgumentException("第 ${outputIndex + 1} 条记录：${e.message ?: "格式错误"}", e)
