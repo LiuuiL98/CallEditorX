@@ -27,11 +27,16 @@ fun dateLabel(date: Long, pattern: String = "MM月dd日 HH:mm") = Instant.ofEpoc
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CallsScreen(entries: List<CallEntry>, permission: Boolean, busy: Boolean, compact: Boolean, onPermission: () -> Unit, onSettings: () -> Unit, onRefresh: () -> Unit, onEdit: (CallEntry) -> Unit, onAdd: () -> Unit, vendorSupported: Boolean = false) {
+fun CallsScreen(entries: List<CallEntry>, permission: Boolean, busy: Boolean, compact: Boolean, onPermission: () -> Unit, onSettings: () -> Unit, onRefresh: () -> Unit, onEdit: (CallEntry) -> Unit, onAdd: () -> Unit, onBatchAdd: (List<CallEntry>) -> Unit, vendorSupported: Boolean = false) {
     var query by rememberSaveable { mutableStateOf("") }
+    var batchAddOpen by rememberSaveable { mutableStateOf(false) }
+    if (batchAddOpen) {
+        BatchAddScreen(busy = busy, onBack = { batchAddOpen = false }, onSubmit = { items -> batchAddOpen = false; onBatchAdd(items) })
+        return
+    }
     var filter by rememberSaveable { mutableIntStateOf(0) }
     val shown = remember(entries, query, filter, vendorSupported) { entries.filter { it.matchesCallFilter(filter, vendorSupported) && (it.number.contains(query, true) || it.name.contains(query, true)) } }
-    Scaffold(contentWindowInsets = WindowInsets(0, 0, 0, 0), topBar = { MediumTopAppBar(windowInsets = WindowInsets(0, 0, 0, 0), title = { Text("通话记录", fontWeight = FontWeight.Bold) }, actions = { IconButton(enabled = !busy && permission, onClick = onRefresh) { AppSymbol(AppIcon.Refresh, "刷新") } }) },
+    Scaffold(contentWindowInsets = WindowInsets(0, 0, 0, 0), topBar = { MediumTopAppBar(windowInsets = WindowInsets(0, 0, 0, 0), title = { Text("通话记录", fontWeight = FontWeight.Bold) }, actions = { TextButton(enabled = !busy && permission, onClick = { batchAddOpen = true }) { Text("批量新增") }; IconButton(enabled = !busy && permission, onClick = onRefresh) { AppSymbol(AppIcon.Refresh, "刷新") } }) },
         floatingActionButton = { if (permission) ExtendedFloatingActionButton(modifier = Modifier.semantics { contentDescription = "新增记录" }, onClick = { if (!busy) onAdd() }, icon = { AppSymbol(AppIcon.Add) }, text = { Text("新增记录") }) }) { padding ->
         if (!permission) {
             PermissionPanel(Modifier.padding(padding), busy, onPermission, onSettings)
