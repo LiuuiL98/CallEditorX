@@ -135,11 +135,11 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(resume) { refresh() }
         BackHandler(enabled = edit == null && screen != "calls") { screen = "calls" }
         Scaffold(snackbarHost = { SnackbarHost(snackbar) }, bottomBar = {
-            if (edit == null && screen != "about") NavigationBar {
-                listOf(Triple("calls", "通话", AppIcon.Calls), Triple("backup", "备份", AppIcon.Backup), Triple("settings", "设置", AppIcon.Settings)).forEach { (key, title, icon) ->
+            if (edit == null && screen != "about") Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), tonalElevation = 3.dp, color = MaterialTheme.colorScheme.surfaceContainer) { NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer, windowInsets = WindowInsets(0, 0, 0, 0)) {
+                listOf(Triple("calls", "通话", AppIcon.Calls), Triple("batch", "批量新增", AppIcon.Calls), Triple("backup", "备份", AppIcon.Backup), Triple("settings", "设置", AppIcon.Settings)).forEach { (key, title, icon) ->
                     NavigationBarItem(selected = screen == key, onClick = { screen = key }, icon = { AppSymbol(icon) }, label = { Text(title) })
                 }
-            }
+            } }
         }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding)) {
                 if (loading) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -158,6 +158,7 @@ class MainActivity : ComponentActivity() {
                         when (screen) {
                             "settings" -> SettingsScreen(preferences, savingPreferences, permission, onPreferences, askPermission, systemSettings, onAbout = { screen = "about" })
                             "about" -> AboutScreen(onBack = { screen = "settings" }, onOpenLink = openLink)
+                            "batch" -> BatchAddScreen(busy = loading || !permission, onBack = { screen = "calls" }, onSubmit = { items -> runWork { val result = withContext(Dispatchers.IO) { repo.restore(items) }; entries = withContext(Dispatchers.IO) { repo.load() }; screen = "calls"; scope.launch { snackbar.showSnackbar("批量新增完成：新增 ${result.inserted} 条，跳过 ${result.skipped} 条") } } })
                             "backup" -> BackupScreen(entries.size, permission, loading, askPermission, systemSettings,
                                 onExport = { runWork { pendingExport = withContext(Dispatchers.IO) { repo.exportJson() }; export.launch("通话记录-${java.time.LocalDate.now()}.json") } },
                                 onImport = { restore.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) })
