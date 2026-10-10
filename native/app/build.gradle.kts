@@ -3,7 +3,7 @@ android {
     namespace = "com.twilight.calleditor"
     compileSdk = 36
     buildToolsVersion = "37.0.0"
-    defaultConfig { applicationId = "com.liuuil.calleditorx"; minSdk = 26; targetSdk = 34; versionCode = 20261010; versionName = "0.2.0-Dev-20261010" }
+    defaultConfig { applicationId = "com.liuuil.calleditorx"; minSdk = 26; targetSdk = 34; versionCode = 20261011; versionName = "0.2.0" }
     buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
