@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   build:
-    name: Build debug APK
+    name: Build debug and release APKs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -34,16 +34,24 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build debug APK
+      - name: Build debug and release APKs
         working-directory: native
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug assembleRelease --stacktrace
 
-      - name: Upload APK
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: CallEditorX-debug-apk
           path: native/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: CallEditorX-release-unsigned-apk
+          path: native/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14
