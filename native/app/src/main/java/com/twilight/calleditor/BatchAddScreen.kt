@@ -40,7 +40,7 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
             require(result.size <= numberRows.size) { "$field的行数不能多于电话号码" }
             return result
         }
-        val nameRows = aligned(names, "姓名")
+        val nameRows = rows(names)
         val typeRows = aligned(types, "类型")
         val durationRows = aligned(durations, "通话时长")
         val timeRows = aligned(callTimes, "通话时间")
@@ -101,7 +101,7 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
                 Text("每个文本框按行填写，第一行号码对应其他文本框第一行，以此类推；不需要输入分隔符。", style = MaterialTheme.typography.bodyMedium)
                 Text("类型：1 呼入、2 呼出、3 未接、4 语音信箱、5 已拒接、6 已拦截、7 其他设备接听。类型留空默认呼出，时长留空默认 0 秒。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(value = numbers, onValueChange = { numbers = it; error = null }, modifier = Modifier.fillMaxWidth(), label = { Text("电话号码（每行一条，必填）") }, placeholder = { Text("13800138000\n10086") }, minLines = 3, enabled = !busy)
-                OutlinedTextField(value = names, onValueChange = { names = it; error = null }, modifier = Modifier.fillMaxWidth(), label = { Text("姓名（每行对应一个号码，可留空）") }, placeholder = { Text("张三\n中国移动") }, minLines = 3, enabled = !busy)
+                OutlinedTextField(value = names, onValueChange = { names = it; error = null }, modifier = Modifier.fillMaxWidth(), label = { Text("姓名（可选，每行对应一个号码）") }, placeholder = { Text("张三\n中国移动") }, minLines = 3, enabled = !busy)
                 OutlinedTextField(value = types, onValueChange = { types = it; error = null }, modifier = Modifier.fillMaxWidth(), label = { Text("通话类型（每行对应一个号码，可留空）") }, placeholder = { Text("2\n1") }, minLines = 3, enabled = !busy)
                 OutlinedTextField(value = durations, onValueChange = { durations = it; error = null }, modifier = Modifier.fillMaxWidth(), label = { Text("通话时长（秒，每行对应一个号码，可留空）") }, placeholder = { Text("45\n0") }, minLines = 3, enabled = !busy)
                 Text("自动生成时间范围", style = MaterialTheme.typography.titleMedium)
