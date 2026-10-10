@@ -1,7 +1,5 @@
 # CallEditorX
 
-**简体中文** · [English](readme/README_en-US.md) · [繁體中文](readme/README_zh-TW.md)
-
 基于 Kotlin、Jetpack Compose 与 Material 3 Expressive 的原生 Android 通话记录编辑与备份工具。
 
 此项目为Call.Editor的分支项目，仅增加了批量生成通话记录功能。上游项目地址如下：
