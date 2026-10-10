@@ -27,6 +27,7 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
     var types by rememberSaveable { mutableStateOf(templatePrefs.getString("types", "").orEmpty()) }
     var durations by rememberSaveable { mutableStateOf(templatePrefs.getString("durations", "").orEmpty()) }
     var randomDurationEnabled by rememberSaveable { mutableStateOf(templatePrefs.getBoolean("randomDurationEnabled", true)) }
+    var randomNumberOrder by rememberSaveable { mutableStateOf(templatePrefs.getBoolean("randomNumberOrder", false)) }
     var randomDurationMinSeconds by rememberSaveable { mutableStateOf(templatePrefs.getString("randomDurationMinSeconds", "1").orEmpty()) }
     var randomDurationMaxSeconds by rememberSaveable { mutableStateOf(templatePrefs.getString("randomDurationMaxSeconds", "300").orEmpty()) }
     var callTimes by rememberSaveable { mutableStateOf(templatePrefs.getString("callTimes", "").orEmpty()) }
@@ -44,6 +45,7 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
             .putString("numbers", numbers).putString("names", names)
             .putString("types", types).putString("durations", durations)
             .putBoolean("randomDurationEnabled", randomDurationEnabled)
+            .putBoolean("randomNumberOrder", randomNumberOrder)
             .putString("randomDurationMinSeconds", randomDurationMinSeconds)
             .putString("randomDurationMaxSeconds", randomDurationMaxSeconds)
             .putString("callTimes", callTimes).putString("rangeStart", rangeStart)
@@ -55,6 +57,7 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
         templatePrefs.edit().clear().apply()
         numbers = ""; names = ""; types = ""; durations = ""; callTimes = ""
         randomDurationEnabled = true; randomDurationMinSeconds = "1"; randomDurationMaxSeconds = "300"
+        randomNumberOrder = false
         rangeStart = defaultStartText; rangeEnd = defaultEndText
         intervalMinSeconds = "60"; intervalMaxSeconds = "90"; timeJitterSeconds = "30"
     }
@@ -62,7 +65,9 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
 
     fun parse(): List<CallEntry> {
         fun rows(value: String) = value.lines().map { it.trim() }
-        val numberRows = rows(numbers).filter { it.isNotEmpty() && !it.startsWith("#") }
+        val rawNumberRows = rows(numbers)
+        val numberIndices = rawNumberRows.indices.filter { rawNumberRows[it].isNotEmpty() && !rawNumberRows[it].startsWith("#") }
+        val numberRows = numberIndices.map { rawNumberRows[it] }
         require(numberRows.isNotEmpty()) { "请至少填写一个电话号码" }
         require(numberRows.size <= 5000) { "单次最多新增 5000 条记录" }
 
@@ -75,6 +80,7 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
         val typeRows = aligned(types, "类型")
         val durationRows = aligned(durations, "通话时长")
         val timeRows = aligned(callTimes, "通话时间")
+        val rowOrder = numberRows.indices.toList().let { if (randomNumberOrder) it.shuffled() else it }
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
         val zone = ZoneId.systemDefault()
         val startMillis = try { LocalDateTime.parse(rangeStart.trim(), formatter).atZone(zone).toInstant().toEpochMilli() }
@@ -94,20 +100,22 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
         require(randomDurationMax != null && randomDurationMax in randomDurationMin..31_536_000L) { "随机通话时长最大值不能小于最小值，且不能超过 31536000 秒" }
         var previousDate: Long? = null
         var previousDuration = 0L
-        return numberRows.mapIndexed { index, number ->
+        return rowOrder.mapIndexed { outputIndex, sourceIndex ->
+            val number = numberRows[sourceIndex]
+            val originalRow = numberIndices[sourceIndex]
             try {
-                val name = nameRows.getOrNull(index).orEmpty()
-                val type = typeRows.getOrNull(index)?.takeIf { it.isNotEmpty() }?.toInt() ?: 2
-                val durationText = durationRows.getOrNull(index).orEmpty()
+                val name = nameRows.getOrNull(originalRow).orEmpty()
+                val type = typeRows.getOrNull(originalRow)?.takeIf { it.isNotEmpty() }?.toInt() ?: 2
+                val durationText = durationRows.getOrNull(originalRow).orEmpty()
                 val duration = if (durationText.isNotEmpty()) durationText.toLongOrNull()
                     ?: throw IllegalArgumentException("通话时长必须填写非负整数秒")
                 else if (randomDurationEnabled) kotlin.random.Random.nextLong(randomDurationMin!!, randomDurationMax!! + 1L)
                 else 0L
-                val timeText = timeRows.getOrNull(index).orEmpty()
+                val timeText = timeRows.getOrNull(originalRow).orEmpty()
                 require(duration >= 0L) { "通话时长不能小于 0 秒" }
                 val date = if (timeText.isBlank()) {
                     val baseline = previousDate?.minus(
-                        kotlin.random.Random.nextLong(intervalMin!!, intervalMax!! + 1L) * 1000L
+                        (kotlin.random.Random.nextLong(intervalMin!!, intervalMax!! + 1L) + previousDuration) * 1000L
                     ) ?: endMillis
                     val jitterMillis = if (jitter!! == 0L) 0L else kotlin.random.Random.nextLong(jitter + 1L) * 1000L
                     val candidate = baseline - jitterMillis
@@ -122,12 +130,12 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
                     timeText.toLongOrNull() ?: try {
                         LocalDateTime.parse(timeText, formatter).atZone(zone).toInstant().toEpochMilli()
                     } catch (_: Exception) {
-                        throw IllegalArgumentException("第 ${index + 1} 行通话时间格式错误，请填 yyyy-MM-dd HH:mm 或时间戳毫秒")
+                        throw IllegalArgumentException("第 ${outputIndex + 1} 行通话时间格式错误，请填 yyyy-MM-dd HH:mm 或时间戳毫秒")
                     }
                 }
                 previousDate?.let { prev ->
                     require(prev - date >= previousDuration * 1000L) {
-                        "第 ${index + 1} 条记录与上一条的时间差不能小于上一条通话时长（${previousDuration} 秒）"
+                        "第 ${outputIndex + 1} 条记录与上一条的时间差不能小于上一条通话时长（${previousDuration} 秒）"
                     }
                 }
                 val entry = CallEntry(number = number, name = name, type = type, duration = duration, date = date)
@@ -137,7 +145,7 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
                 previousDuration = duration
                 entry
             } catch (e: Exception) {
-                throw IllegalArgumentException("第 ${index + 1} 条记录：${e.message ?: "格式错误"}", e)
+                throw IllegalArgumentException("第 ${outputIndex + 1} 条记录：${e.message ?: "格式错误"}", e)
             }
         }
     }
@@ -175,12 +183,16 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
                     Checkbox(checked = randomDurationEnabled, onCheckedChange = { randomDurationEnabled = it; error = null }, enabled = !busy)
                     Text("启用随机通话时长（仅对留空行生效）")
                 }
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Checkbox(checked = randomNumberOrder, onCheckedChange = { randomNumberOrder = it; error = null }, enabled = !busy)
+                    Text("随机号码顺序（号码、姓名、类型、时长和手动通话时间作为一组一起随机排序）")
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(value = randomDurationMinSeconds, onValueChange = { randomDurationMinSeconds = it; error = null }, modifier = Modifier.weight(1f), label = { Text("随机时长最小值（秒）") }, singleLine = true, enabled = !busy && randomDurationEnabled)
                     OutlinedTextField(value = randomDurationMaxSeconds, onValueChange = { randomDurationMaxSeconds = it; error = null }, modifier = Modifier.weight(1f), label = { Text("随机时长最大值（秒）") }, singleLine = true, enabled = !busy && randomDurationEnabled)
                 }
                 Text("自动生成时间范围", style = MaterialTheme.typography.titleMedium)
-                Text("自动生成时间从结束时间开始向更早排列；相邻记录随机间隔在最小值与最大值之间生成，并额外向更早方向随机偏移。若间隔小于上一条通话时长，会自动拉开；时间必须落在设定范围内。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("自动生成时间从结束时间开始向更早排列；每条记录间隔为随机间隔加上一条记录的通话时长，再额外向更早方向随机偏移，因此间隔不会小于上一条通话时长。时间必须落在设定范围内。", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(value = rangeStart, onValueChange = { rangeStart = it; error = null }, modifier = Modifier.fillMaxWidth(), label = { Text("通话时间范围开始") }, placeholder = { Text("2026-10-01 09:00") }, singleLine = true, enabled = !busy)
                 OutlinedTextField(value = rangeEnd, onValueChange = { rangeEnd = it; error = null }, modifier = Modifier.fillMaxWidth(), label = { Text("通话时间范围结束") }, placeholder = { Text("2026-10-10 18:00") }, singleLine = true, enabled = !busy)
                 OutlinedTextField(value = intervalMinSeconds, onValueChange = { intervalMinSeconds = it; error = null }, modifier = Modifier.fillMaxWidth(), label = { Text("记录间隔随机最小值（秒）") }, placeholder = { Text("60") }, singleLine = true, enabled = !busy)
