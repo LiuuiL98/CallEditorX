@@ -54,8 +54,6 @@ Windows 使用 `gradlew.bat`。首次构建需要联网下载 Gradle 和 Maven �
 
 ```text
 native/                 Android 原生源码、测试和 Gradle Wrapper
-readme/README_en-US.md   英文说明
-readme/README_zh-TW.md   繁体中文说明
 readme/screenshots/     可公开的界面截图
 readme/ASSETS.md         图片来源说明
 ```
