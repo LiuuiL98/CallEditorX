@@ -162,7 +162,7 @@ class MainActivity : ComponentActivity() {
                                 onExport = { runWork { pendingExport = withContext(Dispatchers.IO) { repo.exportJson() }; export.launch("通话记录-${java.time.LocalDate.now()}.json") } },
                                 onImport = { restore.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) })
                             else -> CallsScreen(entries, permission, loading, preferences.compactList, askPermission, systemSettings, onRefresh = { refresh() },
-                                onEdit = { edit = it }, onAdd = { edit = CallEntry(number = "", date = System.currentTimeMillis(), duration = 0, type = 2) }, vendorSupported = repo.vendorSupported)
+                                onEdit = { edit = it }, onAdd = { edit = CallEntry(number = "", date = System.currentTimeMillis(), duration = 0, type = 2) }, onBatchAdd = { items -> runWork { val result = withContext(Dispatchers.IO) { repo.restore(items) }; entries = withContext(Dispatchers.IO) { repo.load() }; scope.launch { snackbar.showSnackbar("批量新增完成：新增 ${result.inserted} 条，跳过 ${result.skipped} 条") } } }, vendorSupported = repo.vendorSupported)
                         }
                     }
                 }
