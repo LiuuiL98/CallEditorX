@@ -37,7 +37,7 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
 
         fun aligned(value: String, field: String): List<String> {
             val result = rows(value)
-            require(result.size <= numberRows.size) { "$field的行数不能多于电话号码" }
+            require(result.size <= numberRows.size) { "${field}的行数不能多于电话号码" }
             return result
         }
         val nameRows = rows(names)
