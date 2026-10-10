@@ -16,7 +16,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-internal const val PROJECT_URL = "https://github.com/TG-Twilight/Call.Editor"
+internal const val PROJECT_URL = "https://github.com/LiuuiL98/CallEditorX"
 
 private data class Contributor(val name: String, val description: String, val avatar: Int, val url: String)
 private val contributors = listOf(
@@ -36,7 +36,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenLink: (String) -> Unit) {
                 Surface(shape = RoundedCornerShape(36.dp), color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         ExpressiveBadge(AppIcon.Calls, prominent = true)
-                        Text("Call.Editor", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                        Text("CallEditorX", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
                         Text("原生通话记录编辑与备份工具", style = MaterialTheme.typography.bodyLarge)
                         Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) {
                             Text("${BuildConfig.VERSION_NAME} · ${BuildConfig.VERSION_CODE}", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.labelLarge)
@@ -52,7 +52,7 @@ fun AboutScreen(onBack: () -> Unit, onOpenLink: (String) -> Unit) {
                             Text("GitHub 项目", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
                             AppSymbol(AppIcon.Outgoing)
                         }
-                        Text("TG-Twilight / Call.Editor", style = MaterialTheme.typography.bodyLarge)
+                        Text("LiuuiL98 / CallEditorX", style = MaterialTheme.typography.bodyLarge)
                         Text("查看源码、提交问题或参与贡献", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
