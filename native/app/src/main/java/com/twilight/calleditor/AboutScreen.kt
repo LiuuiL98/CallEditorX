@@ -28,7 +28,7 @@ private val contributors = listOf(
 fun AboutScreen(onBack: () -> Unit, onOpenLink: (String) -> Unit) {
     BackHandler(onBack = onBack)
     Scaffold(contentWindowInsets = WindowInsets(0, 0, 0, 0), topBar = {
-        TopAppBar(windowInsets = WindowInsets(0, 0, 0, 0), title = { Text("关于") },
+        TopAppBar(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp).clip(RoundedCornerShape(28.dp)), windowInsets = WindowInsets(0, 0, 0, 0), colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer), title = { Text("关于") },
             navigationIcon = { IconButton(onClick = onBack) { AppSymbol(AppIcon.Back, "返回") } })
     }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
