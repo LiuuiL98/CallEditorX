@@ -5,8 +5,9 @@
 基于 Kotlin、Jetpack Compose 与 Material 3 Expressive 的原生 Android 通话记录编辑与备份工具。
 
 此项目为Call.Editor的分支项目，仅增加了批量生成通话记录功能。上游项目地址如下：
+[下载安装包与查看更新](https://github.com/TG-Twilight/Call.Editor/releases)
 
-包名：`com.twilight.calleditor` · [下载安装包与查看更新](https://github.com/TG-Twilight/Call.Editor/releases)
+分支版本包名：`com.liuuil.calleditorx`
 
 ## 功能
 
@@ -16,8 +17,11 @@
 - 跟随系统／浅色／深色主题、系统动态配色、紧凑列表；设置重启后保留。
 - 独立关于页，提供 GitHub 项目与带头像的贡献者链接。
 - 数据在本机处理，无广告 SDK，无应用联网权限。外部链接交由浏览器打开。
-
-**短信编辑与备份仍在规划中，当前版本不提供短信功能，也不接管默认短信应用。**
+- 新增批量生成通话记录
+- 随机通话记录顺序
+- 随机通话时间
+- 随机记录间隔时间
+- 优化UI界面
 
 ## 界面
 
