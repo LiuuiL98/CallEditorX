@@ -40,8 +40,8 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
     var timeJitterSeconds by rememberSaveable { mutableStateOf(templatePrefs.getString("timeJitterSeconds", "30").orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
     var preview by remember { mutableStateOf<List<CallEntry>?>(null) }
-    var showKeepTemplateDialog by remember { mutableStateOf(false) }
-    fun requestExit() { if (!busy) { if (preview != null) preview = null else showKeepTemplateDialog = true } }
+    var showClearDialog by remember { mutableStateOf(false) }
+    fun requestExit() { if (!busy) { if (preview != null) preview = null else onBack() } }
     fun saveTemplate() {
         templatePrefs.edit()
             .putString("numbers", numbers).putString("names", names)
@@ -62,6 +62,9 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
         randomNumberOrder = false
         rangeStart = defaultStartText; rangeEnd = defaultEndText
         intervalMinSeconds = "60"; intervalMaxSeconds = "90"; timeJitterSeconds = "30"
+    }
+    LaunchedEffect(numbers, names, types, durations, randomDurationEnabled, randomNumberOrder, randomDurationMinSeconds, randomDurationMaxSeconds, callTimes, rangeStart, rangeEnd, intervalMinSeconds, intervalMaxSeconds, timeJitterSeconds) {
+        saveTemplate()
     }
     BackHandler { requestExit() }
 
@@ -152,13 +155,13 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
         }
     }
 
-    if (showKeepTemplateDialog) {
+    if (showClearDialog) {
         AlertDialog(
-            onDismissRequest = { showKeepTemplateDialog = false },
-            title = { Text("保留批量新增模板？") },
-            text = { Text("是否保留本次填写的号码列表和所有批量新增设置，供下次打开时使用？") },
-            confirmButton = { TextButton(onClick = { saveTemplate(); showKeepTemplateDialog = false; onBack() }) { Text("是，保留") } },
-            dismissButton = { TextButton(onClick = { clearTemplate(); showKeepTemplateDialog = false; onBack() }) { Text("否，清空") } }
+            onDismissRequest = { showClearDialog = false },
+            title = { Text("清空批量新增内容？") },
+            text = { Text("是否要清空内容？这会清除已填写的号码、姓名、类型、时长、通话时间以及相关设置。") },
+            confirmButton = { TextButton(onClick = { clearTemplate(); error = null; preview = null; showClearDialog = false }) { Text("清空") } },
+            dismissButton = { TextButton(onClick = { showClearDialog = false }) { Text("取消") } }
         )
     }
 
@@ -169,7 +172,7 @@ fun BatchAddScreen(busy: Boolean, onBack: () -> Unit, onSubmit: (List<CallEntry>
             colors = TopAppBarDefaults.mediumTopAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
             windowInsets = WindowInsets(0, 0, 0, 0),
             title = { Text(if (preview == null) "批量新增" else "预览批量新增") },
-            navigationIcon = { TextButton(enabled = !busy, onClick = { requestExit() }) { Text("返回") } }
+            actions = { TextButton(enabled = !busy, onClick = { showClearDialog = true }) { Text("清空") } }
         ) }
     ) { padding ->
         Column(
