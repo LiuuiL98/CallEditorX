@@ -3,11 +3,15 @@ android {
     namespace = "com.twilight.calleditor"
     compileSdk = 36
     buildToolsVersion = "37.0.0"
-    defaultConfig { applicationId = "com.twilight.calleditor"; minSdk = 26; targetSdk = 34; versionCode = 20260910; versionName = "0.1.9-Dev" }
+    defaultConfig { applicationId = "com.liuuil.calleditorx"; minSdk = 26; targetSdk = 34; versionCode = 20261011; versionName = "0.2.0" }
     buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
-    buildTypes { release { isMinifyEnabled = false } }
+    buildTypes { release {
+        isMinifyEnabled = true
+        isShrinkResources = true
+        proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+    } }
 }
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2026.05.00"))
